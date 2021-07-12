@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #include <pthread.h>
 
@@ -38,6 +39,12 @@ void bt(void)
     void **sp = __builtin_frame_address(0);
     void **bp = sp;
     printf("Frame 0 base: %p, ret: %p\n", (void*)bp, __builtin_return_address(0));
+
+    // MurmurHash2 by Austin Appleby, public domain.
+    const uint64_t M = 0xc6a4a7935bd1e995ULL;
+    const int R = 47;
+    uint64_t h = M;
+
     while (1)
     {
         void *addr = *sp;
@@ -53,11 +60,27 @@ void bt(void)
                 printf("\e[95mTh-th-th-that's all folks!\e[0m\n");
                 break;
             }
+
+            uint64_t k = (uintptr_t)addr;
+            k *= M;
+            k ^= k >> R;
+            k *= M;
+            h ^= k;
+            h *= M;
         }
         else
             printf("%zd !: %p\n", sp - bp, addr);
         sp++;
     }
+
+#ifdef FINALIZE_HASH
+    // Enable if we want "random" hash values.
+    h ^= h >> R;
+    h *= M;
+    h ^= h >> R;
+#endif
+
+    printf("\e[31mhash=\e[1m%016lx\e[0m\n", h);
 }
 
 void* foo(void *dummy)
@@ -74,6 +97,8 @@ int main()
     pthread_create(&th, 0, foo, 0);
     pthread_join(th, 0);
     foo(0);
+    for (int i=0; i<2; i++)
+        foo(0);
 
     return 0;
 }
