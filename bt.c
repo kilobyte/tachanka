@@ -33,16 +33,14 @@ void read_maps(void)
     fclose(f);
 }
 
-void bt(void)
+uint64_t bthash(uint64_t size)
 {
-    void **sp = __builtin_frame_address(0);
-
     // MurmurHash2 by Austin Appleby, public domain.
     const uint64_t M = 0xc6a4a7935bd1e995ULL;
     const int R = 47;
-    uint64_t h = M;
+    uint64_t h = size ^ M;
 
-    while (1)
+    for (void **sp = __builtin_frame_address(0);; sp++)
     {
         void *addr = *sp;
         int s;
@@ -61,8 +59,6 @@ void bt(void)
             h ^= k;
             h *= M;
         }
-
-        sp++;
     }
 
 #ifdef FINALIZE_HASH
@@ -72,12 +68,12 @@ void bt(void)
     h ^= h >> R;
 #endif
 
-    printf("\e[31mhash=\e[1m%016lx\e[0m\n", h);
+    return h;
 }
 
 void* foo(void *dummy)
 {
-    bt();
+    printf("\e[31mhash=\e[1m%016lx\e[0m\n", bthash(0));
     return 0;
 }
 
