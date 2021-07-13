@@ -23,7 +23,6 @@ void read_maps(void)
         char *file = 0;
         size_t dummy = 0;
         getline(&file, &dummy, f);
-        printf("\e[%dm%p-%p\e[0m\n", (exec=='x')?93:33, start[nm], end[nm]);
         if (exec != 'x')
             continue;
         if (strstr(file, "libpthread"))
@@ -37,8 +36,6 @@ void read_maps(void)
 void bt(void)
 {
     void **sp = __builtin_frame_address(0);
-    void **bp = sp;
-    printf("Frame 0 base: %p, ret: %p\n", (void*)bp, __builtin_return_address(0));
 
     // MurmurHash2 by Austin Appleby, public domain.
     const uint64_t M = 0xc6a4a7935bd1e995ULL;
@@ -54,12 +51,8 @@ void bt(void)
                 break;
         if (s-- && addr < end[s])
         {
-            printf("\e[35m%zd S: %p\e[0m\n", sp - bp, addr);
-            if (addr == _start || addr >= pthread_start && addr < pthread_end)
-            {
-                printf("\e[95mTh-th-th-that's all folks!\e[0m\n");
+            if (addr == _start || (addr >= pthread_start && addr < pthread_end))
                 break;
-            }
 
             uint64_t k = (uintptr_t)addr;
             k *= M;
@@ -68,8 +61,7 @@ void bt(void)
             h ^= k;
             h *= M;
         }
-        else
-            printf("%zd !: %p\n", sp - bp, addr);
+
         sp++;
     }
 
