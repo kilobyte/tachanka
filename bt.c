@@ -70,23 +70,3 @@ uint64_t bthash(uint64_t size)
 
     return h;
 }
-
-void* foo(void *dummy)
-{
-    printf("\e[31mhash=\e[1m%016lx\e[0m\n", bthash(0));
-    return 0;
-}
-
-int main()
-{
-    read_maps();
-
-    pthread_t th;
-    pthread_create(&th, 0, foo, 0);
-    pthread_join(th, 0);
-    foo(0);
-    for (int i=0; i<2; i++)
-        foo(0);
-
-    return 0;
-}
