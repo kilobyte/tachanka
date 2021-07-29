@@ -3,7 +3,27 @@
 #include "critnib.h"
 #include "bt.h"
 
-static critnib *c;
+static struct tblock
+{
+    void *addr;
+    size_t size;
+    long accesses;
+    int next;
+} tblocks[MAXBLOCKS];
+static int nblocks = 0;
+
+static critnib *htb, *mtb;
+
+void *nb(size_t size)
+{
+    uint64_t h = bthash(size);
+    void *addr = malloc(size);
+    if (!addr)
+        return 0;
+    struct tblock *bl = &tblocks[nblocks++];
+    critnib_insert(mtb, (uintptr_t)addr, bl, 0);
+    critnib_insert(htb, h, bl, 0);
+}
 
 void* foo(void *dummy)
 {
@@ -18,7 +38,8 @@ void* foo(void *dummy)
 int main()
 {
     read_maps();
-    c = critnib_new();
+    htb = critnib_new();
+    mtb = critnib_new();
 
     pthread_t th;
     pthread_create(&th, 0, foo, 0);
